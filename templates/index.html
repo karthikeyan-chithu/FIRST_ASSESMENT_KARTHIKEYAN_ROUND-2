@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>RHB Statement Generator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(to right, #f0f4f8, #dfe9f3);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+
+      .form-container {
+        background-color: white;
+        padding: 40px 35px;
+        border-radius: 12px;
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 420px;
+      }
+
+      .logo {
+        color: #c00000;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 20px;
+        color: #003366;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #333;
+      }
+
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 12px;
+        font-size: 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        transition: border 0.2s ease;
+      }
+
+      input[type="number"]:focus,
+      select:focus {
+        border-color: #c00000;
+        outline: none;
+      }
+
+      button {
+        background-color: #c00000;
+        color: white;
+        font-weight: bold;
+        border: none;
+        padding: 12px;
+        width: 100%;
+        font-size: 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #a00000;
+      }
+
+      .error {
+        background-color: #ffeeee;
+        color: #c00000;
+        border-left: 4px solid #c00000;
+        padding: 12px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+      }
+
+      @media (max-width: 480px) {
+        .form-container {
+          padding: 25px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <div class="logo">RHB BANK</div>
+      <h1 id="page-title"></h1>
+
+      <p class="error" id="error-message" style="display: none"></p>
+
+      <form method="POST">
+        <label for="customer_id" id="label-customer-id"></label>
+        <input type="number" name="customer_id" id="customer_id" required />
+
+        <label for="lang" id="label-lang"></label>
+        <select name="lang" id="lang">
+          <!-- Populated via JS -->
+        </select>
+
+        <button type="submit" id="submit-btn"></button>
+      </form>
+    </div>
+
+    <script>
+      const translations = {
+        en: {
+          title: "Credit Card Statement Generator",
+          customer_id: "Customer ID",
+          select_language: "Select Language",
+          submit: "Submit",
+          display_name: "English",
+        },
+        ms: {
+          title: "Penyata Kad Kredit",
+          customer_id: "ID Pelanggan",
+          select_language: "Pilih Bahasa",
+          submit: "Hantar",
+          display_name: "Bahasa Melayu",
+        },
+      };
+
+      const urlParams = new URLSearchParams(window.location.search);
+      let selectedLang = urlParams.get("lang") || "en";
+
+      const langSelect = document.getElementById("lang");
+      const title = document.getElementById("page-title");
+      const labelCustomerId = document.getElementById("label-customer-id");
+      const labelLang = document.getElementById("label-lang");
+      const submitBtn = document.getElementById("submit-btn");
+
+      function populateLanguages() {
+        Object.entries(translations).forEach(([code, data]) => {
+          const option = document.createElement("option");
+          option.value = code;
+          option.textContent = data.display_name;
+          if (code === selectedLang) option.selected = true;
+          langSelect.appendChild(option);
+        });
+      }
+
+      function updateText() {
+        const t = translations[selectedLang];
+        title.textContent = t.title;
+        labelCustomerId.textContent = t.customer_id + ":";
+        labelLang.textContent = t.select_language + ":";
+        submitBtn.textContent = t.submit;
+      }
+
+      langSelect.addEventListener("change", function () {
+        selectedLang = this.value;
+        updateText();
+        const form = this.form;
+        const action = form.getAttribute("action") || window.location.pathname;
+        form.setAttribute("action", `${action}?lang=${selectedLang}`);
+        form.submit();
+      });
+
+      populateLanguages();
+      updateText();
+
+      // Handle backend error injection if Flask passes it into JS
+      const errorFromBackend = "{{ error | tojson | safe }}"; // Replace via Flask
+      const errorEl = document.getElementById("error-message");
+      if (errorFromBackend && errorFromBackend !== "null") {
+        errorEl.textContent = JSON.parse(errorFromBackend);
+        errorEl.style.display = "block";
+      }
+    </script>
+  </body>
+</html>
