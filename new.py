@@ -279,91 +279,146 @@ def fetch_customer_transactions(customer_id):
 
 
 def generate_pdf(customer, account, transactions, lang='en'):
-    # Default to English if the requested language is not available
+
     if lang not in TRANSLATIONS:
         lang = 'en'
-
     t = TRANSLATIONS[lang]
 
-    # Calculate total amount
     total_amount = sum(tx['amount'] for tx in transactions)
 
-    # Set appropriate font based on language
-    font_family = "Arial, sans-serif"
+    # Font selection based on language
+    font_family = "'Roboto', sans-serif"
     if lang == 'zh':
-        font_family = "'Noto Sans SC', Arial, sans-serif"
+        font_family = "'Noto Sans SC', 'Roboto', sans-serif"
     elif lang == 'ta':
-        font_family = "'Noto Sans Tamil', Arial, sans-serif"
+        font_family = "'Noto Sans Tamil', 'Roboto', sans-serif"
 
     html_template = """
-     <html>
-     <head>
-         <meta charset="UTF-8">
-         <style>
-             @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Sans+Tamil&display=swap');
-             body { 
-                 font-family: {{ font_family }}; 
-                 margin: 30px;
-                 direction: {{ 'rtl' if lang == 'ar' else 'ltr' }};
-             }
-             h1, h2 { color: #C00000; }  /* RHB red color */
-             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-             th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
-             th { background-color: #f2f2f2; }
-             .header { margin-bottom: 30px; }
-             .logo { text-align: {{ 'right' if lang == 'ar' else 'left' }}; margin-bottom: 20px; }
-             .info-block { margin-bottom: 5px; }
-             .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
-             .amount { text-align: right; }
-             .total-row { font-weight: bold; background-color: #f9f9f9; }
-         </style>
-     </head>
-     <body>
-         <div class="logo">
-             <h1>{{ t.title }}</h1>
-         </div>
-         
-         <div class="header">
-             <div class="info-block"><strong>{{ t.name }}:</strong> {{ customer.full_name }}</div>
-             <div class="info-block"><strong>{{ t.email }}:</strong> {{ customer.email }}</div>
-             <div class="info-block"><strong>{{ t.card_number }}:</strong> **** **** **** {{ account.card_number[-4:] }}</div>
-             <div class="info-block"><strong>{{ t.statement_date }}:</strong> {{ statement_date }}</div>
-         </div>
- 
-         <h2>{{ t.transaction_summary }}</h2>
-         <table>
-             <thead>
-                 <tr>
-                     <th>{{ t.date }}</th>
-                     <th>{{ t.merchant }}</th>
-                     <th>{{ t.category }}</th>
-                     <th>{{ t.description }}</th>
-                     <th>{{ t.amount }}</th>
-                 </tr>
-             </thead>
-             <tbody>
-                 {% for tx in transactions %}
-                 <tr>
-                     <td>{{ format_date(tx.transaction_date, lang) }}</td>
-                     <td>{{ tx.merchant_name }}</td>
-                     <td>{{ tx.category }}</td>
-                     <td>{{ tx.description }}</td>
-                     <td class="amount">{{ t.currency_symbol }}{{ "%.2f"|format(tx.amount) }}</td>
-                 </tr>
-                 {% endfor %}
-                 <tr class="total-row">
-                     <td colspan="4">{{ t.total }}</td>
-                     <td class="amount">{{ t.currency_symbol }}{{ "%.2f"|format(total_amount) }}</td>
-                 </tr>
-             </tbody>
-         </table>
-         
-         <div class="footer">
-             {{ t.footer_text }}
-         </div>
-     </body>
-     </html>
-     """
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Sans+Tamil&family=Roboto&display=swap');
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                margin: 40px;
+                color: #333;
+            }
+            .header {
+                border-bottom: 3px solid #0072CE;
+                padding-bottom: 10px;
+                margin-bottom: 30px;
+            }
+            .logo-title {
+                color: #0072CE;
+                font-size: 40px;
+                font-weight: 700;
+                margin-bottom: 10px;
+                letter-spacing: 1px;
+                font-family: cursive;
+            }
+            .customer-details, .footer {
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+            .customer-details div {
+                margin: 4px 0;
+            }
+            h2 {
+                font-size: 20px;
+                margin-top: 40px;
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 5px;
+                color: #004d99;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+                font-size: 14px;
+            }
+            th {
+                background-color: #f4f4f4;
+                text-align: left;
+                padding: 10px;
+                border: 1px solid #ddd;
+            }
+            td {
+                padding: 10px;
+                border: 1px solid #ddd;
+            }
+            tr:nth-child(even) {
+                background-color: #fafafa;
+            }
+            .amount {
+                text-align: right;
+                white-space: nowrap;
+            }
+            .total-row {
+                font-weight: bold;
+                background-color: #e6f0fa;
+            }
+            .footer {
+                margin-top: 50px;
+                text-align: center;
+                font-size: 12px;
+                color: #666;
+                border-top: 1px solid #ddd;
+                padding-top: 10px;
+            }
+            .name-logo{
+              color: #fe0707;
+              font-size: 50px;
+              text-shadow: 2px 2px gainsboro;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div class="logo-title">RHB<span class="name-logo">♦️</span></div>
+            <div class="customer-details">
+                <div><strong>{{ t.name }}:</strong> {{ customer.full_name }}</div>
+                <div><strong>{{ t.email }}:</strong> {{ customer.email }}</div>
+                <div><strong>{{ t.card_number }}:</strong> **** **** **** {{ account.card_number[-4:] }}</div>
+                <div><strong>{{ t.statement_date }}:</strong> {{ statement_date }}</div>
+            </div>
+        </div>
+
+        <h2>{{ t.transaction_summary }}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ t.date }}</th>
+                    <th>{{ t.merchant }}</th>
+                    <th>{{ t.category }}</th>
+                    <th>{{ t.description }}</th>
+                    <th class="amount">{{ t.amount }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                <tr>
+                    <td>{{ format_date(tx.transaction_date, lang) }}</td>
+                    <td>{{ tx.merchant_name }}</td>
+                    <td>{{ tx.category }}</td>
+                    <td>{{ tx.description }}</td>
+                    <td class="amount">{{ t.currency_symbol }}{{ "%.2f"|format(tx.amount) }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row">
+                    <td colspan="4">{{ t.total }}</td>
+                    <td class="amount">{{ t.currency_symbol }}{{ "%.2f"|format(total_amount) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            {{ t.footer_text }}
+        </div>
+    </body>
+    </html>
+    """
+
     template = Template(html_template)
     html_out = template.render(
         customer=customer,
@@ -380,6 +435,7 @@ def generate_pdf(customer, account, transactions, lang='en'):
     filename = f"statement_customer_{customer['customer_id']}_{lang}.pdf"
     HTML(string=html_out).write_pdf(filename)
     return filename
+
 
 # ========== Flask Routes ==========
 
